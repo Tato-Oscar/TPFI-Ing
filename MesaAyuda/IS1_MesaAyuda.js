@@ -247,6 +247,7 @@ app.post('/api/addCliente', (req,res) => {
     
         const newCliente = {
          id                    : contacto,
+         contacto              : contacto,
          nombre                : nombre,
          password              : password,
          activo                : true,

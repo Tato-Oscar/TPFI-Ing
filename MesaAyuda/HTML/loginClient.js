@@ -52,8 +52,8 @@ formE1.addEventListener('submit', (event) => {
 	const tpl = document.createDocumentFragment();
 
 	const systemURL = {
-		listarTicket: 'http://127.0.0.1:5500/HTML/listarTicket.html',
-		loginCliente: 'http://127.0.0.1:5500/HTML/loginClient.html',
+		listarTicket: 'http://127.0.0.1:5502/HTML/listarTicket.html',
+		loginCliente: 'http://127.0.0.1:5502/HTML/loginClient.html',
 	};
 
 	const RESTAPI = {
