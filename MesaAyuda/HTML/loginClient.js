@@ -42,23 +42,19 @@ formE1.addEventListener('submit', (event) => {
 		return;
 	}
 
-	/*--- Genera objeto HTML a ser actualizado en el tag identificado como "app" */
+	/*---
+        Genera objeto HTML a ser actualizado en el tag identificado como "app"
+        */
 
 	const HTMLResponse = document.querySelector('#app');
 	const ul = document.createElement('ul');
+
 	const tpl = document.createDocumentFragment();
 
-	// Login con Linux
 	const systemURL = {
-		listarTicket: 'http://127.0.0.1:5501/HTML/listarTicket.html',
-		loginCliente: 'http://127.0.0.1:5501/HTML/loginClient.html',
+		listarTicket: 'http://127.0.0.1:5500/HTML/listarTicket.html',
+		loginCliente: 'http://127.0.0.1:5500/HTML/loginClient.html',
 	};
-
-	//Login con Windows
-// const systemURL = {
-// 	listarTicket: 'listarTicket.html',
-// 	loginCliente: 'loginClient.html',
-	// };
 
 	const RESTAPI = {
 		loginCliente: 'http://localhost:8080/api/loginCliente',
@@ -66,7 +62,7 @@ formE1.addEventListener('submit', (event) => {
 	};
 
 /*-----
-    Define el URL para realizar el acceso en base al acceso a un servidor local
+    Define el URI para realizar el acceso en base al acceso a un servidor local
 */
     const MODE='LOCAL'; /*-- Instrucción a cambiar opciones LOCAL, TYPICODE o AWS --*/
 
@@ -134,63 +130,62 @@ formE1.addEventListener('submit', (event) => {
 	utiliza URL y options definidos en los pasos anteriores
     */
 
-	fetch(`${API}`, APIoptions)
-		.then((res) => {
-			return res.json();
-		})
-		.then((users) => {
-			console.log(
-				'Datos en respuesta del application server=' + JSON.stringify(users)
-			);
-			console.log('users.response=' + users.password);
-			if (users.response == 'OK') {
-				//<==Habilitar esto para dejar que el API REST verifique sin exponer la password
-				console.log('La password es correcta');
-				console.log(
-					'nombre(' +
-						users.nombre +
-						') fecha_ultimo_ingreso(' +
-						users.fecha_ultimo_ingreso +
-						')' +
-						'mode(' + MODE + ')'
-				);
-				console.log(
-					'id=' +
-						users.id +
-						' nombre=' +
-						users.nombre +
-						' ultimo=' +
-						users.fecha_ultimo_ingreso
-				);
-				console.log(
-					'changing to ' +
-						systemURL.listarTicket +
-						'?id=' +
-						users.id +
-						'&contacto=' +
-						users.contacto +
-						'&nombre=' +
-						users.nombre +
-						'&fecha_ultimo_ingreso=' +
-						users.fecha_ultimo_ingreso +
-						'&mode=' + MODE
-				);
-				window.location.href =
-					systemURL.listarTicket +
-					'?id=' +
-					users.id +
-					'&contacto=' +
-					users.contacto +
-					'&nombre=' +
-					users.nombre +
-					'&fecha_ultimo_ingreso=' +
-					users.fecha_ultimo_ingreso +
-					'&mode=' + MODE;
-			} else {
-				console.log('La password no es correcta');
-				document.getElementById('resultado1').style.color = 'RED'; /*--Fix hecho por  Germán Lombardi IS1-2025 */
-				document.getElementById('resultado1').textContent =
-					'Error de login, intente nuevamente';                  /*--Fix hecho por  Germán Lombardi IS1-2025 */
-			}
-		});
-});
+	/*-----
+    Realiza el acceso al API Rest utilizando gestión de sincronización mediante promesas
+    utiliza URL y options definidos en los pasos anteriores
+    */
+
+    fetch(`${API}`, APIoptions)
+        .then(async (res) => {
+            let data;
+            try {
+                data = await res.json(); 
+            } catch (e) {
+                throw { serverDown: true };
+            }
+
+            if (!res.ok) {
+                throw data; 
+            }
+
+            return data; 
+        })
+        .then((users) => {
+            if (users.response === 'OK') {
+                window.location.href =
+                    systemURL.listarTicket +
+                    '?id=' + users.id +
+                    '&contacto=' + users.contacto +
+                    '&nombre=' + users.nombre +
+                    '&fecha_ultimo_ingreso=' + users.fecha_ultimo_ingreso +
+                    '&mode=' + MODE;
+            }
+        })
+        .catch((err) => {
+            const resultado = document.getElementById('resultado1');
+            resultado.style.color = 'RED';
+            resultado.style.textAlign = 'center';
+
+            if (err.serverDown) {
+                resultado.textContent = 'Error: Servidor o base de datos apagada';
+                
+            } else if (err.response === 'invalido') { 
+                resultado.textContent = 'Usuario o contraseña incorrecta';
+                
+            } else if (err.response === 'ERROR' && err.message === 'Cliente invalido') { 
+                resultado.textContent = 'El usuario no existe. Puede registrarse.';
+                
+                // Habilitamos el link "Registrate"
+                let linkRegistro = document.getElementById('linkRegistro');
+                if(linkRegistro) {
+                    linkRegistro.style.pointerEvents = "auto";
+                    linkRegistro.style.color = "blue";
+                }
+                
+            } else if (err.response === 'ERROR') {
+                resultado.textContent = err.message || 'Error de login';
+            } else {
+                resultado.textContent = 'Error de comunicación con el servidor';
+            }
+        });
+}); 

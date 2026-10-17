@@ -120,7 +120,8 @@ app.post('/api/loginCliente', (req,res) => {
     const { id } = req.body;
     const {password} = req.body;
 
-    console.log("loginCliente: id("+id+") password ("+password+")");
+        console.log("loginCliente: id("+id+") password ("+password+")");
+
 
     if (!password) {
         res.status(400).send({response : "ERROR" , message : "Password no informada"});
