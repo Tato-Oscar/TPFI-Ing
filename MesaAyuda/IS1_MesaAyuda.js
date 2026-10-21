@@ -101,7 +101,7 @@ app.get('/api/cliente', (req,res) => {
 */  
 app.post('/api/loginCliente', (req,res) => {
 
-    const { id } = req.body;
+    const {id} = req.body;
     const {password} = req.body;
 
     // console.log("loginCliente: id("+id+") password ("+password+")");
@@ -130,7 +130,7 @@ app.post('/api/loginCliente', (req,res) => {
     else {
         if (Object.keys(data).length == 0) {
             console.log("loginCliente: id(" + id + ") password (invalido)"); // El cliente no existe en la DB
-            res.status(400).send({response : "ERROR" , message : "Cliente invalido"});
+            res.status(400).send({response : "ERROR" , message : "usuario incorrecto"});
         } else {
             const paswd=jsonParser('password',data.Item);
             const activo=jsonParser('activo',data.Item);
@@ -144,20 +144,20 @@ app.post('/api/loginCliente', (req,res) => {
                     const fecha_ultimo_ingreso=jsonParser('fecha_ultimo_ingreso',data.Item);
                     res.status(200).send(JSON.stringify({response : "OK", "id" : id, "nombre" : nombre, "contacto" : contacto, "fecha_ultimo_ingreso": fecha_ultimo_ingreso}));    
                 } else {
-                    console.log("loginCliente: id(" + id + ") password (invalido)"); // Usuarios inactivo
+                    console.log("loginCliente: id(" + id + ") password (invalido)"); // Usuario inactivo
                     res.status(400).send(JSON.stringify({response : "ERROR", message : "Cliente no activo"}));    
                 }
             } else {
                console.log("loginCliente: id(" + id + ") password (invalido)    "); // Contraseña incorrecta
-               res.status(400).send(JSON.stringify({response : "ERROR" , message : "usuario incorrecto"}));
+               res.status(400).send(JSON.stringify({response : "ERROR" , message : "password incorrecta"}));
             }    
         }    
     }
 })
     }
     getClienteByKey();
-});
 
+});
 
 /*-----------
   /api/getCliente
@@ -247,6 +247,7 @@ app.post('/api/addCliente', (req,res) => {
     
         const newCliente = {
          id                    : contacto,
+         contacto              : contacto,
          nombre                : nombre,
          password              : password,
          activo                : true,
@@ -397,30 +398,27 @@ app.post('/api/resetCliente', (req,res) => {
                 return;
             } else {
 
-                const momento = new Date();
-                const fechaCambioPassword = `${String(momento.getDate()).padStart(2, '0')}/${String(momento.getMonth() + 1).padStart(2, '0')}/${momento.getFullYear()}`;
                 const paramsUpdate = { 
    
                     ExpressionAttributeNames: { 
-                        "#p": "password",
-                        "#fcp": "fecha_cambio_password"
+                         "#p": "password" 
                     }, 
                     ExpressionAttributeValues: { 
-                        ":p": password,
-                        ":fcp": fechaCambioPassword
+                        ":p": password 
                    }, 
                    Key: { 
                        "id": id 
                    }, 
+                   ReturnValues: "ALL_NEW", 
                    TableName: "cliente", 
-                   UpdateExpression: "SET #p = :p, #fcp = :fcp" 
+                   UpdateExpression: "SET #p = :p" 
                 };
                 docClient.update(paramsUpdate, function (err, data) {
                     if (err)  {
                         res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+err}));
                         return;
                     } else {
-                        res.status(200).send(JSON.stringify({response : "OK", message : "updated"}));
+                        res.status(200).send(JSON.stringify({response : "OK", message : "updated" , "data": data}));
                     }    
                 });    
             }
