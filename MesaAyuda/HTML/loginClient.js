@@ -1,5 +1,14 @@
 const formE1 = document.querySelector('.form');
 
+// Conserva el correo escrito en el login para evitar que el usuario lo repita.
+const resetPasswordLink = document.getElementById('resetPasswordLink');
+resetPasswordLink.addEventListener('click', () => {
+	const email = document.querySelector('input[name="id"]').value.trim();
+	if (email) {
+		resetPasswordLink.href = `ResetPassword.html?id=${encodeURIComponent(email)}`;
+	}
+});
+
 /*---
     Intercepta el submit del formulario
     */
@@ -52,8 +61,8 @@ formE1.addEventListener('submit', (event) => {
 	const tpl = document.createDocumentFragment();
 
 	const systemURL = {
-		listarTicket: 'http://127.0.0.1:5502/HTML/listarTicket.html',
-		loginCliente: 'http://127.0.0.1:5502/HTML/loginClient.html',
+		listarTicket: 'http://127.0.0.1:5500/HTML/listarTicket.html',
+		loginCliente: 'http://127.0.0.1:5500/HTML/loginClient.html',
 	};
 
 	const RESTAPI = {
@@ -130,25 +139,22 @@ formE1.addEventListener('submit', (event) => {
 	utiliza URL y options definidos en los pasos anteriores
     */
 
-	/*-----
-    Realiza el acceso al API Rest utilizando gestión de sincronización mediante promesas
-    utiliza URL y options definidos en los pasos anteriores
-    */
-
-    fetch(`${API}`, APIoptions)
+	fetch(`${API}`, APIoptions)
         .then(async (res) => {
             let data;
             try {
-                data = await res.json(); 
+                data = await res.json();
             } catch (e) {
                 throw { serverDown: true };
             }
 
+
             if (!res.ok) {
-                throw data; 
+                throw data;
             }
 
-            return data; 
+
+            return data;
         })
         .then((users) => {
             if (users.response === 'OK') {
@@ -166,26 +172,28 @@ formE1.addEventListener('submit', (event) => {
             resultado.style.color = 'RED';
             resultado.style.textAlign = 'center';
 
+
             if (err.serverDown) {
                 resultado.textContent = 'Error: Servidor o base de datos apagada';
-                
-            } else if (err.response === 'invalido') { 
+               
+            } else if (err.response === 'invalido') {
                 resultado.textContent = 'Usuario o contraseña incorrecta';
-                
-            } else if (err.response === 'ERROR' && err.message === 'Cliente invalido') { 
+               
+            } else if (err.response === 'ERROR' && err.message === 'Cliente invalido') {
                 resultado.textContent = 'El usuario no existe. Puede registrarse.';
-                
+               
                 // Habilitamos el link "Registrate"
                 let linkRegistro = document.getElementById('linkRegistro');
                 if(linkRegistro) {
                     linkRegistro.style.pointerEvents = "auto";
                     linkRegistro.style.color = "blue";
                 }
-                
+               
             } else if (err.response === 'ERROR') {
                 resultado.textContent = err.message || 'Error de login';
             } else {
                 resultado.textContent = 'Error de comunicación con el servidor';
             }
         });
-}); 
+});
+

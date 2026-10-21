@@ -144,7 +144,7 @@ app.post('/api/loginCliente', (req,res) => {
                     const fecha_ultimo_ingreso=jsonParser('fecha_ultimo_ingreso',data.Item);
                     res.status(200).send(JSON.stringify({response : "OK", "id" : id, "nombre" : nombre, "contacto" : contacto, "fecha_ultimo_ingreso": fecha_ultimo_ingreso}));    
                 } else {
-                    console.log("loginCliente: id(" + id + ") password (invalido)"); // Usuario inactivo
+                    console.log("loginCliente: id(" + id + ") password (invalido)"); // Usuarios inactivo
                     res.status(400).send(JSON.stringify({response : "ERROR", message : "Cliente no activo"}));    
                 }
             } else {
@@ -156,8 +156,8 @@ app.post('/api/loginCliente', (req,res) => {
 })
     }
     getClienteByKey();
-
 });
+
 
 /*-----------
   /api/getCliente
@@ -247,7 +247,6 @@ app.post('/api/addCliente', (req,res) => {
     
         const newCliente = {
          id                    : contacto,
-         contacto              : contacto,
          nombre                : nombre,
          password              : password,
          activo                : true,
@@ -398,27 +397,30 @@ app.post('/api/resetCliente', (req,res) => {
                 return;
             } else {
 
+                const momento = new Date();
+                const fechaCambioPassword = `${String(momento.getDate()).padStart(2, '0')}/${String(momento.getMonth() + 1).padStart(2, '0')}/${momento.getFullYear()}`;
                 const paramsUpdate = { 
    
                     ExpressionAttributeNames: { 
-                         "#p": "password" 
+                        "#p": "password",
+                        "#fcp": "fecha_cambio_password"
                     }, 
                     ExpressionAttributeValues: { 
-                        ":p": password 
+                        ":p": password,
+                        ":fcp": fechaCambioPassword
                    }, 
                    Key: { 
                        "id": id 
                    }, 
-                   ReturnValues: "ALL_NEW", 
                    TableName: "cliente", 
-                   UpdateExpression: "SET #p = :p" 
+                   UpdateExpression: "SET #p = :p, #fcp = :fcp" 
                 };
                 docClient.update(paramsUpdate, function (err, data) {
                     if (err)  {
                         res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+err}));
                         return;
                     } else {
-                        res.status(200).send(JSON.stringify({response : "OK", message : "updated" , "data": data}));
+                        res.status(200).send(JSON.stringify({response : "OK", message : "updated"}));
                     }    
                 });    
             }
