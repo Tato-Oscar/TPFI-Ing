@@ -104,11 +104,21 @@ fetch(`${APIREST_URL}`,options)
 }).then(ticket=>{
     console.log("ticket:");
     console.log(ticket);
+
+    // VALIDACIÓN: Si el backend devuelve error o no hay array 'data', mostramos el mensaje y salimos
+    if (ticket.response === "ERROR" || !ticket.data || ticket.data.length === 0) {
+        console.log("no tiene tickets");
+        document.getElementById('mensajes').style.textAlign = "center";
+        document.getElementById('mensajes').style.color="RED";
+        document.getElementById("mensajes").innerHTML = "No hay tickets pendientes";
+        return; // Corta la ejecución para que no intente ejecutar el forEach
+    }
+
     let f=false;
     let table=document.createElement("table");
     table.style.border="1px solid";
-    table.style.backgroundColor="##626607";
-//ticket.uresponse.forEach((t)=> { 
+    table.style.backgroundColor="#626607"; // Se corrigió el doble ## que tenía el código original
+
     ticket.data.forEach((t)=> { 
         console.log(t.clienteID)
         if (t.clienteID == query.id) {
@@ -144,10 +154,12 @@ fetch(`${APIREST_URL}`,options)
         console.log(table);
         HTMLResponse.appendChild(table);
     } else {
-
-        console.log("no tiene tickets");
+        console.log("no tiene tickets (después del filtrado)");
         document.getElementById('mensajes').style.textAlign = "center";
         document.getElementById('mensajes').style.color="RED";
         document.getElementById("mensajes").innerHTML = "No hay tickets pendientes";
     }
+})
+.catch(err => {
+    console.log("Error en fetch de tickets:", err);
 });
