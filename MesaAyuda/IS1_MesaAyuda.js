@@ -98,11 +98,7 @@ app.get('/api/cliente', (req,res) => {
 /*---
   /api/loginCliente
   Esta API permite acceder a un cliente por ID y comparar la password pasada en un JSON en el cuerpo con la indicada en el DB
-*/  
-/*---
-  /api/loginCliente
-  Esta API permite acceder a un cliente y comparar la password
-*/  
+*/   
 app.post('/api/loginCliente', (req,res) => {
 
     const {id} = req.body; // El frontend manda el email bajo el nombre 'id'
@@ -117,7 +113,6 @@ app.post('/api/loginCliente', (req,res) => {
         return;
     }    
 
-    // Usamos scanDb para buscar el email ('id' del body) en la columna 'contacto'
     scanDb(id)
     .then(resultDb => {
         if (Object.keys(resultDb).length == 0) {
@@ -367,7 +362,7 @@ Permite cambiar la password de un cliente
 */
 app.post('/api/resetCliente', (req,res) => {
     
-    const {id}       = req.body;
+    const {id}       = req.body; // El frontend envía el correo electrónico aquí
     const {password} = req.body;
  
     if (!id) {
@@ -380,51 +375,45 @@ app.post('/api/resetCliente', (req,res) => {
         return;
     }
 
-    var params = {
-        TableName: "cliente",
-        Key: {
-            "id" : id
-            //test use "id": "0533a95d-7eef-4c6b-b753-1a41c9d1fbd0"   
-             }
+    // 1. Buscamos al cliente por su correo electrónico usando scanDb
+    scanDb(id)
+    .then(resultDb => {
+        if (Object.keys(resultDb).length == 0) {
+            res.status(400).send(JSON.stringify({"response":"ERROR", message : "Cliente no existe"}));
+            return;
+        } 
+        
+        // 2. Extraemos el UUID real del cliente encontrado
+        const clienteID = resultDb[0].id; 
+
+        // 3. Actualizamos la contraseña usando el UUID real en el Key
+        const paramsUpdate = { 
+            ExpressionAttributeNames: { 
+                 "#p": "password" 
+            }, 
+            ExpressionAttributeValues: { 
+                ":p": password 
+           }, 
+           Key: { 
+               "id": clienteID // <-- Usamos el UUID real, no el correo
+           }, 
+           ReturnValues: "ALL_NEW", 
+           TableName: "cliente", 
+           UpdateExpression: "SET #p = :p" 
         };
         
-    docClient.get(params, function (err, data) {
-        if (err)  {
-            res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+ null}));
-            return;
-        } else {
-
-            if (Object.keys(data).length == 0) {
-                res.status(400).send(JSON.stringify({"response":"ERROR",message : "Cliente no existe"}),null,2);
+        docClient.update(paramsUpdate, function (err, data) {
+            if (err)  {
+                res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+err}));
                 return;
             } else {
-
-                const paramsUpdate = { 
-   
-                    ExpressionAttributeNames: { 
-                         "#p": "password" 
-                    }, 
-                    ExpressionAttributeValues: { 
-                        ":p": password 
-                   }, 
-                   Key: { 
-                       "id": id 
-                   }, 
-                   ReturnValues: "ALL_NEW", 
-                   TableName: "cliente", 
-                   UpdateExpression: "SET #p = :p" 
-                };
-                docClient.update(paramsUpdate, function (err, data) {
-                    if (err)  {
-                        res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+err}));
-                        return;
-                    } else {
-                        res.status(200).send(JSON.stringify({response : "OK", message : "updated" , "data": data}));
-                    }    
-                });    
-            }
-        }    
+                res.status(200).send(JSON.stringify({response : "OK", message : "updated" , "data": data}));
+            }    
+        });    
     })
+    .catch(err => {
+        res.status(400).send(JSON.stringify({response : "ERROR", message : "DB access error "+err}));
+    });
 });
 /*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*=*
 /*                                                       API REST ticket                                                             *
